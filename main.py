@@ -36,27 +36,6 @@ def save_info_photo(uri):
                 f.write(arg)
 
 
-# def save_info_photo(uri):
-#     response_info_all_photo = requests.get(uri.text)
-#     if response_info_all_photo.status_code == 200:
-#         info_all_photo = json.loads(response_info_all_photo.content)
-#         threads = []
-#         print(info_all_photo)
-#         for info_photo in info_all_photo:
-#             print(info_photo)
-#             thread = threading.Thread(target=download_info, args=info_photo)
-#             thread.start()
-#             threads.append(thread)
-#         for thread in threads:
-#             thread.join()
-#
-#
-# def download_info(info_photo):
-#     with open("info.txt", "a") as f:
-#         arg = f"{str(info_photo)}\n"
-#         f.write(arg)
-
-
 @bot.message_handler(commands=["start"])
 def start(message):
     mess = 'Привет, это онбординг. Пришлите мне ссылку на список фотографий с picsum.photos, например: https://picsum.photos/v2/list?page=2&limit=100'
