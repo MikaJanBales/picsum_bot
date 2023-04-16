@@ -166,7 +166,7 @@ def make_table_csv(message):
         for data in record:
             file_writer.writerow(data)
 
-    with open("table_info_photo.csv", "rb") as doc:
+    with open("table_info_photo.csv", "rb") as w_file:
         bot.send_document(message.chat.id, w_file)
 
     mess = "Таблица с изображениями успешно сформирована."
