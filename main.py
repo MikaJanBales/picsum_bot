@@ -1,10 +1,10 @@
-import fileinput
 import re
 import requests
 import telebot
 import json
 import csv
-import ast
+import psycopg2
+from psycopg2 import Error
 
 TOKEN = '6080161304:AAGX73pAvXF87SQzZd-WGH_CyXfDRT8whzc'
 
@@ -17,12 +17,26 @@ def check_uri(uri):
 
 
 def search_photo(num_id):
-    with open("info.txt", "r") as f:
-        for line in f:
-            data = ast.literal_eval(line)
-            if data["id"] == num_id:
-                break
-    return data
+    try:
+        # Подключение к существующей базе данных
+        connection = psycopg2.connect(
+            host="localhost",
+            database="telegram",
+            user="telegram",
+            password="telegram"
+        )
+        # Курсор для выполнения операций с базой данных
+        cursor = connection.cursor()
+        select_query = "SELECT * FROM photo WHERE num_id = %s"
+        cursor.execute(select_query, num_id)
+        record = cursor.fetchall()
+        print("Результат", record)
+        connection.commit()
+        cursor.close()
+        connection.close()
+    except (Exception, Error) as error:
+        print("Ошибка при работе с PostgreSQL", error)
+    return record
 
 
 def save_info_photo(uri):
@@ -30,14 +44,50 @@ def save_info_photo(uri):
     if response_info_all_photo.status_code == 200:
         info_all_photo = json.loads(response_info_all_photo.content)
         for info_photo in info_all_photo:
-            path_file_info = f"info.txt"
-            with open(path_file_info, "a") as f:
-                arg = f"{str(info_photo)}\n"
-                f.write(arg)
+            try:
+                # Подключение к существующей базе данных
+                connection = psycopg2.connect(
+                    host="localhost",
+                    database="telegram",
+                    user="telegram",
+                    password="telegram"
+                )
+                # Курсор для выполнения операций с базой данных
+                cursor = connection.cursor()
+                insert_query = "INSERT INTO photo (num_id, author, width, height, url, download_url) VALUES ('%s', '%s', '%s', '%s', '%s', '%s')" % (
+                    info_photo['id'], info_photo['author'], info_photo['width'], info_photo['height'],
+                    info_photo['url'],
+                    info_photo['download_url'])
+                cursor.execute(insert_query)
+                connection.commit()
+                print("Запись успешно вставлена")
+                cursor.close()
+                connection.close()
+            except (Exception, Error) as error:
+                print("Ошибка при работе с PostgreSQL", error)
 
 
 @bot.message_handler(commands=["start"])
 def start(message):
+    try:
+        # Подключение к существующей базе данных
+        connection = psycopg2.connect(
+            host="localhost",
+            database="telegram",
+            user="telegram",
+            password="telegram"
+        )
+        # Курсор для выполнения операций с базой данных
+        cursor = connection.cursor()
+        sql_create_database = "CREATE TABLE IF NOT EXISTS photo (id SERIAL PRIMARY KEY, num_id INT, author VARCHAR(50), width INT, height INT, url VARCHAR(70), download_url VARCHAR(70));"
+        cursor.execute(sql_create_database)
+        connection.commit()
+        cursor.close()
+        connection.close()
+        print("Таблица успешно создана в PostgreSQL")
+    except (Exception, Error) as error:
+        print("Ошибка при работе с PostgreSQL", error)
+
     mess = 'Привет, это онбординг. Пришлите мне ссылку на список фотографий с picsum.photos, например: https://picsum.photos/v2/list?page=2&limit=100'
     bot.send_message(message.chat.id, mess)
 
@@ -91,39 +141,71 @@ def menu_photo():
 
 def make_table_csv(message):
     with open("table_info_photo.csv", mode="w", encoding="utf-8") as w_file:
-        names = ['id', 'author', 'width', 'height', 'url', 'download_url']
-        file_writer = csv.DictWriter(w_file, delimiter=",", lineterminator="\r", fieldnames=names)
-        file_writer.writeheader()
+        names = ['', 'ID', 'AUTHOR', 'WIDTH', 'HEIGHT', 'URL', 'DOWNLOAD_URL']
+        file_writer = csv.writer(w_file, delimiter=",", lineterminator="\r")
+        file_writer.writerow(names)
 
-        with open("info.txt", mode="r") as f:
-            for line in f:
-                data = ast.literal_eval(line)
-                file_writer.writerow(data)
+        try:
+            # Подключение к существующей базе данных
+            connection = psycopg2.connect(
+                host="localhost",
+                database="telegram",
+                user="telegram",
+                password="telegram"
+            )
+            # Курсор для выполнения операций с базой данных
+            cursor = connection.cursor()
+            cursor.execute("SELECT * FROM photo")
+            record = cursor.fetchall()
+            print("Результат", record)
+            connection.commit()
+            cursor.close()
+            connection.close()
+        except (Exception, Error) as error:
+            print("Ошибка при работе с PostgreSQL", error)
+        for data in record:
+            file_writer.writerow(data)
 
     with open("table_info_photo.csv", "rb") as doc:
-        bot.send_document(message.chat.id, doc)
+        bot.send_document(message.chat.id, w_file)
 
-    mess = "Таблица с изображениями успешно сформирована"
+    mess = "Таблица с изображениями успешно сформирована."
     bot.send_message(message.chat.id, mess, reply_markup=menu_photo())
 
 
 def look_list_photo(message):
     mess = "Список фотографий."
     markup = telebot.types.InlineKeyboardMarkup()
-    with open("info.txt", mode="r") as f:
-        for line in f:
-            data = ast.literal_eval(line)
-            number_id = data["id"]
-            author = data["author"]
-            btn = telebot.types.InlineKeyboardButton(f"{author} ({number_id})",
-                                                     callback_data=f"get_photo:{number_id}")
-            markup.row(btn)
+
+    try:
+        # Подключение к существующей базе данных
+        connection = psycopg2.connect(
+            host="localhost",
+            database="telegram",
+            user="telegram",
+            password="telegram"
+        )
+        # Курсор для выполнения операций с базой данных
+        cursor = connection.cursor()
+        cursor.execute("SELECT num_id, author FROM photo")
+        record = cursor.fetchall()
+        print("Результат", record)
+        connection.commit()
+        cursor.close()
+        connection.close()
+    except (Exception, Error) as error:
+        print("Ошибка при работе с PostgreSQL", error)
+
+    for info in record:
+        btn = telebot.types.InlineKeyboardButton(f"{info[1]} ({info[0]})", callback_data=f"get_photo:{info[0]}")
+        markup.row(btn)
+
     bot.send_message(message.chat.id, mess, reply_markup=markup)
 
 
 def get_photo(message, num_id):
     data = search_photo(num_id)
-    mess = f"Author: {data['author']}\nID: {num_id}\nSize: {data['width']}x{data['height']}\nURL: {data['url']}\nDownload URL: {data['download_url']}"
+    mess = f"Author: {data[0][2]}\nID: {num_id}\nSize: {data[0][3]}x{data[0][4]}\nURL: {data[0][5]}\nDownload URL: {data[0][6]}"
 
     markup = telebot.types.InlineKeyboardMarkup()
     btn_del = telebot.types.InlineKeyboardButton('Удалить',
@@ -131,30 +213,43 @@ def get_photo(message, num_id):
     markup.row(btn_del)
     btn_back = telebot.types.InlineKeyboardButton('Назад', callback_data='look_list_photo')
     markup.row(btn_back)
-    bot.send_photo(message.chat.id, data['download_url'])
+    bot.send_photo(message.chat.id, data[0][6])
     bot.send_message(message.chat.id, mess, reply_markup=markup)
 
 
 def check_delete_photo(message, num_id):
     data = search_photo(num_id)
-    mess = f"Вы уверены, что хотите удалить эту фотографию?\n{data['author']} ({num_id})"
+    mess = f"Вы уверены, что хотите удалить эту фотографию?\n{data[0][2]} ({num_id})"
     markup = telebot.types.InlineKeyboardMarkup()
     btn_yes = telebot.types.InlineKeyboardButton('Да',
                                                  callback_data=f"delete_photo:{num_id}")
     btn_no = telebot.types.InlineKeyboardButton('Нет', callback_data='look_list_photo')
     markup.row(btn_yes, btn_no)
-    bot.send_photo(message.chat.id, data['download_url'])
+    bot.send_photo(message.chat.id, data[0][6])
     bot.send_message(message.chat.id, mess, reply_markup=markup)
 
 
 def delete_photo(message, num_id):
-    for line in fileinput.input('info.txt', inplace=True):
-        data = ast.literal_eval(line)
-        if data["id"] == num_id:
-            continue  # пропускаем строку с нужным id
-        print(line.rstrip())
+    try:
+        # Подключение к существующей базе данных
+        connection = psycopg2.connect(
+            host="localhost",
+            database="telegram",
+            user="telegram",
+            password="telegram"
+        )
+        # Курсор для выполнения операций с базой данных
+        cursor = connection.cursor()
+        delete_query = "DELETE FROM photo WHERE num_id = %s"
+        cursor.execute(delete_query, num_id)
+        connection.commit()
+        cursor.close()
+        connection.close()
+        print("Запись успешно удалена из таблицы")
+    except (Exception, Error) as error:
+        print("Ошибка при работе с PostgreSQL", error)
 
-    mess = "Фотография была успешна удалена."
+    mess = "Фотография была успешно удалена."
     bot.send_message(message.chat.id, mess, reply_markup=look_list_photo(message))
 
 
