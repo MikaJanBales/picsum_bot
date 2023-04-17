@@ -2,6 +2,7 @@ import psycopg2
 from psycopg2 import Error
 
 
+# Создание таблицы с информацией о фото
 def create_table():
     try:
         # Подключение к существующей базе данных
@@ -23,6 +24,7 @@ def create_table():
         print("Ошибка при работе с PostgreSQL", error)
 
 
+# Получение информации о фото из бд
 def get_info_photo(num_id):
     try:
         # Подключение к существующей базе данных
@@ -47,6 +49,7 @@ def get_info_photo(num_id):
         print("Ошибка при работе с PostgreSQL", error)
 
 
+# Добавление в бд фото
 def add_photo(info_photo):
     try:
         # Подключение к существующей базе данных
@@ -71,6 +74,7 @@ def add_photo(info_photo):
         print("Ошибка при работе с PostgreSQL", error)
 
 
+# Получение списка имеющихся фото из бд
 def get_list_photo():
     try:
         # Подключение к существующей базе данных
@@ -94,6 +98,7 @@ def get_list_photo():
         print("Ошибка при работе с PostgreSQL", error)
 
 
+# Получение id и author фото из бд
 def get_id_and_author_photo():
     try:
         # Подключение к существующей базе данных
@@ -116,6 +121,7 @@ def get_id_and_author_photo():
         print("Ошибка при работе с PostgreSQL", error)
 
 
+# Удаление из бд фото
 def delete_photo(num_id):
     try:
         # Подключение к существующей базе данных

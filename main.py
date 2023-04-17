@@ -18,6 +18,7 @@ def check_uri(uri):
     return True if check else False
 
 
+# Сохранение фото
 def save_info_photo(uri):
     response_info_all_photo = requests.get(uri.text)
     if response_info_all_photo.status_code == 200:
@@ -26,6 +27,7 @@ def save_info_photo(uri):
             add_photo(info_photo)
 
 
+# Обработчик команды /start
 @bot.message_handler(commands=["start"])
 def start(message):
     create_table()
@@ -33,6 +35,7 @@ def start(message):
     bot.send_message(message.chat.id, mess)
 
 
+# Обработчик отправленных ссылок
 @bot.message_handler(content_types=["text"])
 def get_user_uri(message):
     if check_uri(message.text):
@@ -47,6 +50,7 @@ def get_user_uri(message):
         bot.send_message(message.chat.id, mess, reply_markup=markup)
 
 
+# Обработчик callback-запросов
 @bot.callback_query_handler(func=lambda callback: True)
 def callback_message(callback):
     if callback.data == "menu":
@@ -72,6 +76,7 @@ def callback_message(callback):
         bot.send_message(callback.message.chat.id, mess, reply_markup=look_list_photo(callback.message))
 
 
+# Интерфейс меню
 def menu_photo():
     markup = telebot.types.InlineKeyboardMarkup()
     btn1 = telebot.types.InlineKeyboardButton('Добавить фотографии', callback_data='add_photo')
@@ -83,6 +88,7 @@ def menu_photo():
     return markup
 
 
+# Создание и отправкафайлов
 def make_table_csv(message):
     with open("table_info_photo.csv", mode="w", encoding="utf-8") as w_file:
         names = ['', 'ID', 'AUTHOR', 'WIDTH', 'HEIGHT', 'URL', 'DOWNLOAD_URL']
@@ -101,6 +107,7 @@ def make_table_csv(message):
     bot.send_message(message.chat.id, mess, reply_markup=menu_photo())
 
 
+# Просмотр всех имеющихся фото
 def look_list_photo(message):
     mess = "Список фотографий."
     markup = telebot.types.InlineKeyboardMarkup()
@@ -114,6 +121,7 @@ def look_list_photo(message):
     bot.send_message(message.chat.id, mess, reply_markup=markup)
 
 
+# Получение информации о фото
 def get_photo(message, num_id):
     data = get_info_photo(num_id)
     mess = f"Author: {data[0][2]}\nID: {num_id}\nSize: {data[0][3]}x{data[0][4]}\nURL: {data[0][5]}\nDownload URL: {data[0][6]}"
@@ -128,6 +136,7 @@ def get_photo(message, num_id):
     bot.send_message(message.chat.id, mess, reply_markup=markup)
 
 
+# Проверка на удаление пользователем
 def check_delete_photo(message, num_id):
     data = get_info_photo(num_id)
     mess = f"Вы уверены, что хотите удалить эту фотографию?\n{data[0][2]} ({num_id})"
