@@ -7,7 +7,8 @@ import csv
 from db import delete_photo, get_list_photo, get_id_and_author_photo, \
     get_info_photo, add_photo, create_table
 
-TOKEN = '6080161304:AAGX73pAvXF87SQzZd-WGH_CyXfDRT8whzc'
+# Токен можно заполучить у @BotFather в телеграм
+TOKEN = '<ваш токен>'
 
 bot = telebot.TeleBot(TOKEN)
 
